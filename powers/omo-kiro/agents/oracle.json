@@ -1,0 +1,63 @@
+{
+  "name": "oracle",
+  "description": "Strategic technical advisor for architecture, hard debugging, high-risk trade-offs, and post-implementation review.",
+  "welcomeMessage": "Oracle ready: ask for a concise technical recommendation.",
+  "prompt": "file://../prompts/oracle.md",
+  "model": "claude-opus-4.8",
+  "mcpServers": {
+    "context7": {
+      "url": "https://mcp.context7.com/mcp",
+      "disabled": false
+    },
+    "grep_app": {
+      "url": "https://mcp.grep.app",
+      "disabled": false
+    },
+    "websearch": {
+      "url": "https://mcp.exa.ai/mcp?tools=web_search_exa",
+      "disabled": false
+    }
+  },
+  "tools": [
+    "read",
+    "shell",
+    "subagent",
+    "code",
+    "@context7",
+    "@grep_app",
+    "@websearch"
+  ],
+  "allowedTools": [
+    "read"
+  ],
+  "toolsSettings": {
+    "shell": {
+      "autoAllowReadonly": true,
+      "deniedCommands": [
+        "rm -rf",
+        "git reset --hard",
+        "git checkout --",
+        "git clean -fd",
+        "chmod -R 777"
+      ]
+    },
+    "subagent": {
+      "availableAgents": [
+        "sisyphus",
+        "hephaestus",
+        "prometheus",
+        "atlas",
+        "oracle",
+        "librarian",
+        "explore",
+        "multimodal-looker",
+        "metis",
+        "momus",
+        "sisyphus-junior"
+      ]
+    }
+  },
+  "resources": [
+    "file://../steering/**/*.md"
+  ]
+}

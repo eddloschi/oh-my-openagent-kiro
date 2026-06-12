@@ -1,0 +1,65 @@
+{
+  "name": "atlas",
+  "description": "OMO plan executor that implements saved markdown plans, updates checklist state, and runs verification.",
+  "welcomeMessage": "Atlas ready: provide a .kiro/omo/plans/*.md path.",
+  "prompt": "file://../prompts/atlas.md",
+  "model": "claude-sonnet-4.6",
+  "mcpServers": {
+    "context7": {
+      "url": "https://mcp.context7.com/mcp",
+      "disabled": false
+    },
+    "grep_app": {
+      "url": "https://mcp.grep.app",
+      "disabled": false
+    },
+    "websearch": {
+      "url": "https://mcp.exa.ai/mcp?tools=web_search_exa",
+      "disabled": false
+    }
+  },
+  "tools": [
+    "read",
+    "write",
+    "shell",
+    "subagent",
+    "code",
+    "@context7",
+    "@grep_app",
+    "@websearch"
+  ],
+  "allowedTools": [
+    "read"
+  ],
+  "toolsSettings": {
+    "shell": {
+      "autoAllowReadonly": true,
+      "deniedCommands": [
+        "rm -rf",
+        "git reset --hard",
+        "git checkout --",
+        "git clean -fd",
+        "chmod -R 777"
+      ]
+    },
+    "subagent": {
+      "availableAgents": [
+        "sisyphus",
+        "hephaestus",
+        "prometheus",
+        "atlas",
+        "oracle",
+        "librarian",
+        "explore",
+        "multimodal-looker",
+        "metis",
+        "momus",
+        "sisyphus-junior"
+      ]
+    }
+  },
+  "resources": [
+    "file://../steering/**/*.md",
+    "skill://../skills/**/SKILL.md"
+  ]
+}

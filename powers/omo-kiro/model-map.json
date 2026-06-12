@@ -1,0 +1,28 @@
+{
+  "strategy": "Use the highest available Claude tier by agent role. This mapping is based on the local Kiro CLI model list provided by the user.",
+  "availableModels": {
+    "opus": "claude-opus-4.8",
+    "sonnet": "claude-sonnet-4.6",
+    "haiku": "claude-haiku-4.5",
+    "auto": "auto"
+  },
+  "rolePolicy": {
+    "opus": "Highest-reasoning agents: orchestration, deep work, planning, and strategic technical advice.",
+    "sonnet": "Strong balanced agents: plan execution, plan critique, pre-planning consultation, and visual/media interpretation.",
+    "haiku": "Fast economical agents: local exploration, external documentation lookup, and small bounded execution."
+  },
+  "agents": {
+    "sisyphus": "claude-opus-4.8",
+    "hephaestus": "claude-opus-4.8",
+    "prometheus": "claude-opus-4.8",
+    "oracle": "claude-opus-4.8",
+    "atlas": "claude-sonnet-4.6",
+    "metis": "claude-sonnet-4.6",
+    "momus": "claude-sonnet-4.6",
+    "multimodal-looker": "claude-sonnet-4.6",
+    "explore": "claude-haiku-4.5",
+    "librarian": "claude-haiku-4.5",
+    "sisyphus-junior": "claude-haiku-4.5"
+  },
+  "fallback": "If a mapped model is unavailable in another Kiro account, set that agent to `auto` or the nearest available tier from the same family."
+}

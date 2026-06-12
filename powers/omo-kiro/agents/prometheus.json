@@ -1,0 +1,71 @@
+{
+  "name": "prometheus",
+  "description": "OMO plan builder that writes executable markdown plans with evidence, acceptance criteria, and QA scenarios.",
+  "welcomeMessage": "Prometheus ready: planning only, markdown plans under .kiro/omo/.",
+  "prompt": "file://../prompts/prometheus.md",
+  "model": "claude-opus-4.8",
+  "mcpServers": {
+    "context7": {
+      "url": "https://mcp.context7.com/mcp",
+      "disabled": false
+    },
+    "grep_app": {
+      "url": "https://mcp.grep.app",
+      "disabled": false
+    },
+    "websearch": {
+      "url": "https://mcp.exa.ai/mcp?tools=web_search_exa",
+      "disabled": false
+    }
+  },
+  "tools": [
+    "read",
+    "write",
+    "shell",
+    "subagent",
+    "code",
+    "@context7",
+    "@grep_app",
+    "@websearch"
+  ],
+  "allowedTools": [
+    "read"
+  ],
+  "toolsSettings": {
+    "write": {
+      "allowedPaths": [
+        ".kiro/omo/plans/**",
+        ".kiro/omo/drafts/**"
+      ]
+    },
+    "shell": {
+      "autoAllowReadonly": true,
+      "deniedCommands": [
+        "rm -rf",
+        "git reset --hard",
+        "git checkout --",
+        "git clean -fd",
+        "chmod -R 777"
+      ]
+    },
+    "subagent": {
+      "availableAgents": [
+        "sisyphus",
+        "hephaestus",
+        "prometheus",
+        "atlas",
+        "oracle",
+        "librarian",
+        "explore",
+        "multimodal-looker",
+        "metis",
+        "momus",
+        "sisyphus-junior"
+      ]
+    }
+  },
+  "resources": [
+    "file://../steering/**/*.md",
+    "skill://../skills/**/SKILL.md"
+  ]
+}
