@@ -17,7 +17,25 @@ Install these directories:
 powers/omo-kiro/
 ```
 
+Skills now carry `references/` and `scripts/` subdirectories, so always copy them recursively
+(`cp -R`), never file-by-file.
+
 Do not install unrelated conversion tools, upstream source checkouts, temporary plans, logs, or `.git/`.
+
+## Toolchain Prerequisites
+
+The core workflows need only Kiro itself. Some skills shell out to external tooling, which the user
+installs — nothing here is bundled or auto-installed:
+
+| Tool | Needed by | Notes |
+|---|---|---|
+| `node` | `/omo-plan` (plan scaffolding), `/omo-visual-qa`, `/omo-lsp-setup` | Zero-dependency scripts; any current LTS works. |
+| `python3` | `/omo-ast-grep`, `/omo-coding-agent-sessions`, `/omo-ultimate-browsing`, `/omo-data-scientist` | Standard library only, except where a skill documents otherwise. |
+| `sg` (ast-grep) | `/omo-ast-grep`, structural search elsewhere | Install via `.kiro/skills/omo-ast-grep/install.sh` (or `install.ps1`). |
+| `uv` | `/omo-data-scientist` | Bootstrap with the skill's `scripts/setup-uv.sh`. |
+| `gh` | `/omo-start-work --make-pr` / `--ship`, `/omo-review-work` context mining | Optional; the workflows degrade with an explicit message when absent. |
+| `agent-browser` or Playwright CLI | `/omo-visual-qa` web capture | Optional; Kiro has no browser-control tool, so the skill probes for these and reports "capture unavailable" if neither exists. |
+| `rg` | Faster search across all agents | Optional but strongly recommended. |
 
 ## Before Installing
 
@@ -34,7 +52,16 @@ Check model availability:
 kiro-cli chat --list-models
 ```
 
-If a configured model is unavailable, edit the affected agent JSON before installing and use a listed model or `auto`.
+The agents are pinned to `claude-opus-5`, `claude-sonnet-5`, and `claude-haiku-4.5`
+(see `powers/omo-kiro/model-map.json`). **Kiro falls back to `chat.defaultModel` when a configured
+model id is unavailable, silently** — an unverified id looks like it works. Confirm the ids appear
+in the list above; if they do not, edit the affected agent JSON *and* `model-map.json` together, and
+re-run the consistency check:
+
+```bash
+diff <(for f in .kiro/agents/*.json; do python3 -c "import json,sys;d=json.load(open('$f'));print(d['name'],d['model'])"; done | sort) \
+     <(python3 -c "import json;[print(k,v) for k,v in sorted(json.load(open('powers/omo-kiro/model-map.json'))['agents'].items())]")
+```
 
 ## Local Workspace Install
 
@@ -178,3 +205,13 @@ diff -ru .kiro/prompts "$TARGET_WORKSPACE/.kiro/prompts" || true
 ```
 
 Then repeat the local or global copy steps. Do not delete user-created agents, skills, steering files, or settings unless explicitly requested.
+
+After editing anything under `.kiro/` in this repository, re-sync and verify the Power mirror:
+
+```bash
+bash scripts/sync-powers.sh
+bash scripts/check-powers-sync.sh
+```
+
+`powers/omo-kiro/{agents,prompts,skills,steering,settings}` must stay byte-identical to `.kiro/`;
+`POWER.md` and `model-map.json` are power-only and are edited by hand.
