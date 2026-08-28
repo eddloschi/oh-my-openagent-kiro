@@ -27,16 +27,28 @@ Use read-only trusted tools for reviewers, planners, and consultants by default.
 - `sisyphus` or `hephaestus`: when a bounded task needs autonomous implementation.
 - `sisyphus-junior`: when a small, clear task can be delegated safely.
 
+Skill-level workflows wrap the common routes: `/omo-plan`, `/omo-review-plan`, `/omo-start-work`,
+`/omo-review-work`, `/omo-research`, `/omo-ultrawork`, `/omo-debugging`.
+
 ## Consultation Prompt Shape
+
+Use the handoff contract from `steering/orchestration.md`. The three binding fields are
+`GOAL`, `STOP WHEN`, and `EVIDENCE` — a consultation without them will over-run or stop early,
+because the child has none of this session's context.
 
 ```markdown
 ## Consultation
 **Requesting agent**:
-**Goal**:
+**GOAL**: the single outcome that makes this consultation done.
+**STOP WHEN**: the exact observable condition that ends it.
+**EVIDENCE**: what you must return to prove it.
 **Current state**:
 **Relevant files or plan path**:
 **Constraints**:
 **Expected output**:
 ```
+
+Kiro subagents run one at a time and block until they return. Order your consultations; do not
+describe them as parallel. Treat every result as a claim until you verify it against `EVIDENCE`.
 
 After a subagent completes, summarize the specialist result in the current session and identify which agent produced it. If using the CLI-session fallback, say that the result came from a separate Kiro CLI agent run. If the fallback command fails because tools are not trusted in non-interactive mode, either rerun with a narrower explicit trust set or fall back to `/agent swap <name>` handoff.

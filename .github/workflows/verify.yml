@@ -1,0 +1,70 @@
+name: verify
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Power mirror is in sync
+        run: bash scripts/check-powers-sync.sh
+
+      - name: Skill frontmatter is valid
+        run: bash scripts/check-skills.sh
+
+      - name: No OpenCode-only tool names used as instructions
+        run: bash scripts/check-forbidden-tokens.sh
+
+      - name: Agent JSON is valid and matches the model map
+        run: |
+          for f in .kiro/agents/*.json; do
+            python3 -m json.tool "$f" >/dev/null || { echo "invalid JSON: $f"; exit 1; }
+          done
+          diff \
+            <(for f in .kiro/agents/*.json; do
+                python3 -c "import json,sys;d=json.load(open(sys.argv[1]));print(d['name'],d['model'])" "$f"
+              done | sort) \
+            <(python3 -c "import json;[print(k,v) for k,v in sorted(json.load(open('powers/omo-kiro/model-map.json'))['agents'].items())]")
+
+      - name: Agent prompt references resolve
+        run: |
+          for f in .kiro/agents/*.json; do
+            p=$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['prompt'].replace('file://',''))" "$f")
+            test -f ".kiro/agents/$p" || { echo "missing prompt for $f: $p"; exit 1; }
+          done
+
+      - name: Plan scaffold produces a well-formed plan
+        run: |
+          work=$(mktemp -d)
+          cp -R .kiro/skills/omo-plan "$work/omo-plan"
+          cd "$work"
+          node omo-plan/scripts/scaffold-plan.mjs smoke --clear
+          test -f .kiro/omo/drafts/smoke.md
+          head -1 .kiro/omo/plans/smoke.md | grep -q '^# smoke - Work Plan'
+          grep -q '^## TL;DR (For humans)' .kiro/omo/plans/smoke.md
+          grep -qE '^- \[ \] F1\.' .kiro/omo/plans/smoke.md
+          node omo-plan/scripts/scaffold-plan.mjs ../escape --clear && exit 1 || true
+
+      - name: Vendored Python compiles
+        run: |
+          python3 -m compileall -q \
+            .kiro/skills/omo-ast-grep/scripts \
+            .kiro/skills/omo-coding-agent-sessions/scripts \
+            .kiro/skills/omo-ultimate-browsing \
+            .kiro/skills/omo-data-scientist/scripts \
+            .kiro/skills/omo-frontend/scripts
+
+      - name: VERSION matches the docs
+        run: |
+          upstream=$(sed 's/-kiro\..*//' VERSION)
+          grep -q "v${upstream}" README.md \
+            || { echo "README.md does not mention v${upstream}"; exit 1; }

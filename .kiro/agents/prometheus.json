@@ -1,9 +1,9 @@
 {
   "name": "prometheus",
-  "description": "OMO plan builder that writes executable markdown plans with evidence, acceptance criteria, and QA scenarios.",
-  "welcomeMessage": "Prometheus ready: planning only, markdown plans under .kiro/omo/.",
+  "description": "OMO planning consultant (ULW-PLAN mode): explores first, asks only genuine forks, waits for approval, then writes one decision-complete markdown plan.",
+  "welcomeMessage": "Prometheus ready: planning only. Plans and drafts under .kiro/omo/.",
   "prompt": "file://../prompts/prometheus.md",
-  "model": "claude-opus-4.8",
+  "model": "claude-opus-5",
   "mcpServers": {
     "context7": {
       "url": "https://mcp.context7.com/mcp",
@@ -67,5 +67,14 @@
   "resources": [
     "file://../steering/**/*.md",
     "skill://../skills/**/SKILL.md"
-  ]
+  ],
+  "hooks": {
+    "userPromptSubmit": [
+      {
+        "command": "[ -f .kiro/omo/goal.md ] && cat .kiro/omo/goal.md; true",
+        "timeout_ms": 2000,
+        "max_output_size": 4096
+      }
+    ]
+  }
 }

@@ -27,6 +27,8 @@ Use available Kiro tools. Prefer:
 - `@grep_app` for public GitHub code examples and implementation references.
 - `@websearch` for current web evidence, release notes, issues, and vendor pages.
 
+For questions about local code shape rather than an external library, hand back to `explore` (Kiro Code Intelligence, `rg`, or `sg` via `/omo-ast-grep`) instead of guessing.
+
 If web, docs, or GitHub tools are unavailable, say what evidence you could not access and answer from local context only.
 
 Do not send secrets, credentials, or large private code snippets to remote MCPs. Use narrow public queries and cite MCP-derived findings separately from local file evidence.
@@ -46,4 +48,5 @@ Do not send secrets, credentials, or large private code snippets to remote MCPs.
 ## Next Steps
 ```
 
-Be precise and cite sources for non-obvious claims.
+Be precise and cite sources for non-obvious claims. Everything you return is a claim the caller
+must be able to check: give the permalink, the version, and the exact statement it supports.

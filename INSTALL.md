@@ -17,7 +17,25 @@ Install these directories:
 powers/omo-kiro/
 ```
 
+Skills now carry `references/` and `scripts/` subdirectories, so always copy them recursively
+(`cp -R`), never file-by-file.
+
 Do not install unrelated conversion tools, upstream source checkouts, temporary plans, logs, or `.git/`.
+
+## Toolchain Prerequisites
+
+The core workflows need only Kiro itself. Some skills shell out to external tooling, which the user
+installs — nothing here is bundled or auto-installed:
+
+| Tool | Needed by | Notes |
+|---|---|---|
+| `node` | `/omo-plan` (plan scaffolding), `/omo-visual-qa`, `/omo-lsp-setup` | Zero-dependency scripts; any current LTS works. |
+| `python3` | `/omo-ast-grep`, `/omo-coding-agent-sessions`, `/omo-ultimate-browsing`, `/omo-data-scientist` | Standard library only, except where a skill documents otherwise. |
+| `sg` (ast-grep) | `/omo-ast-grep`, structural search elsewhere | Install via `.kiro/skills/omo-ast-grep/install.sh` (or `install.ps1`). |
+| `uv` | `/omo-data-scientist` | Bootstrap with the skill's `scripts/setup-uv.sh`. |
+| `gh` | `/omo-start-work --make-pr` / `--ship`, `/omo-review-work` context mining | Optional; the workflows degrade with an explicit message when absent. |
+| `agent-browser` or Playwright CLI | `/omo-visual-qa` web capture | Optional; Kiro has no browser-control tool, so the skill probes for these and reports "capture unavailable" if neither exists. |
+| `rg` | Faster search across all agents | Optional but strongly recommended. |
 
 ## Before Installing
 
@@ -34,7 +52,16 @@ Check model availability:
 kiro-cli chat --list-models
 ```
 
-If a configured model is unavailable, edit the affected agent JSON before installing and use a listed model or `auto`.
+The agents are pinned to `claude-opus-5`, `claude-sonnet-5`, and `claude-haiku-4.5`
+(see `powers/omo-kiro/model-map.json`). **Kiro falls back to `chat.defaultModel` when a configured
+model id is unavailable, silently** — an unverified id looks like it works. Confirm the ids appear
+in the list above; if they do not, edit the affected agent JSON *and* `model-map.json` together, and
+re-run the consistency check:
+
+```bash
+diff <(for f in .kiro/agents/*.json; do python3 -c "import json,sys;d=json.load(open('$f'));print(d['name'],d['model'])"; done | sort) \
+     <(python3 -c "import json;[print(k,v) for k,v in sorted(json.load(open('powers/omo-kiro/model-map.json'))['agents'].items())]")
+```
 
 ## Local Workspace Install
 
@@ -162,6 +189,29 @@ Example:
 }
 ```
 
+## Releasing
+
+The port carries its own version in `VERSION`, formatted `<upstream>-kiro.<n>`:
+
+```text
+4.19.4-kiro.1    first release tracking upstream v4.19.4
+4.19.4-kiro.2    port-only fix, same upstream
+4.20.0-kiro.1    next upstream sync
+```
+
+The `-kiro.<n>` revision exists because the port and upstream are separate lines: a fix to a
+prompt or script here does not correspond to an upstream release, and a bare `v4.19.4` tag would
+leave nowhere to put it.
+
+To cut a release, bump `VERSION` in a pull request. Merging it fires
+`.github/workflows/release.yml`, which tags the commit and publishes a GitHub release with
+generated notes. Merges that do not touch `VERSION` publish nothing, and the workflow is a no-op
+if the tag already exists — so re-running it is safe.
+
+`.github/workflows/verify.yml` runs on every pull request: the mirror-sync, skill-frontmatter, and
+forbidden-token checks, plus agent JSON validity, the agent-to-model-map match, prompt reference
+resolution, a plan-scaffold smoke test, and compilation of the vendored Python.
+
 ## Updating An Existing Install
 
 Before replacing files, inspect user changes:
@@ -178,3 +228,13 @@ diff -ru .kiro/prompts "$TARGET_WORKSPACE/.kiro/prompts" || true
 ```
 
 Then repeat the local or global copy steps. Do not delete user-created agents, skills, steering files, or settings unless explicitly requested.
+
+After editing anything under `.kiro/` in this repository, re-sync and verify the Power mirror:
+
+```bash
+bash scripts/sync-powers.sh
+bash scripts/check-powers-sync.sh
+```
+
+`powers/omo-kiro/{agents,prompts,skills,steering,settings}` must stay byte-identical to `.kiro/`;
+`POWER.md` and `model-map.json` are power-only and are edited by hand.

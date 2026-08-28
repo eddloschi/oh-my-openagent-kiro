@@ -1,28 +1,30 @@
 {
-  "strategy": "Use the highest available Claude tier by agent role. This mapping is based on the local Kiro CLI model list provided by the user.",
+  "strategy": "Use the highest available Claude tier by agent role. Verify the IDs below against `kiro-cli chat --list-models` before relying on them; Kiro falls back to `chat.defaultModel` when a configured model id is unavailable.",
   "availableModels": {
-    "opus": "claude-opus-4.8",
-    "sonnet": "claude-sonnet-4.6",
+    "opus": "claude-opus-5",
+    "sonnet": "claude-sonnet-5",
     "haiku": "claude-haiku-4.5",
-    "auto": "auto"
+    "auto": "auto",
+    "gpt": "gpt-5.6-sol"
   },
   "rolePolicy": {
-    "opus": "Highest-reasoning agents: orchestration, deep work, planning, and strategic technical advice.",
-    "sonnet": "Strong balanced agents: plan execution, plan critique, pre-planning consultation, and visual/media interpretation.",
-    "haiku": "Fast economical agents: local exploration, external documentation lookup, and small bounded execution."
+    "opus": "Highest-reasoning Claude agents: orchestration, planning, and strategic technical advice.",
+    "sonnet": "Strong balanced agents: plan execution, plan critique, pre-planning consultation, visual/media interpretation, and bounded delegated execution. `sisyphus-junior` sits here rather than on haiku because upstream v4.19.4 bumped it to a sonnet-class model once junior workers began running real edits plus their own verification; set it back to `claude-haiku-4.5` if cost matters more than upstream parity.",
+    "haiku": "Fast economical agents: local exploration and external documentation lookup.",
+    "gpt": "Deep single-thread execution. Upstream Oh My OpenAgent restricts Hephaestus to GPT-5.x models and ships a native GPT-5.6 prompt for it; this port follows that. Set it to `claude-opus-5` if you would rather stay on one provider."
   },
   "agents": {
-    "sisyphus": "claude-opus-4.8",
-    "hephaestus": "claude-opus-4.8",
-    "prometheus": "claude-opus-4.8",
-    "oracle": "claude-opus-4.8",
-    "atlas": "claude-sonnet-4.6",
-    "metis": "claude-sonnet-4.6",
-    "momus": "claude-sonnet-4.6",
-    "multimodal-looker": "claude-sonnet-4.6",
+    "sisyphus": "claude-opus-5",
+    "hephaestus": "gpt-5.6-sol",
+    "prometheus": "claude-opus-5",
+    "oracle": "claude-opus-5",
+    "atlas": "claude-sonnet-5",
+    "metis": "claude-sonnet-5",
+    "momus": "claude-sonnet-5",
+    "multimodal-looker": "claude-sonnet-5",
+    "sisyphus-junior": "claude-sonnet-5",
     "explore": "claude-haiku-4.5",
-    "librarian": "claude-haiku-4.5",
-    "sisyphus-junior": "claude-haiku-4.5"
+    "librarian": "claude-haiku-4.5"
   },
   "fallback": "If a mapped model is unavailable in another Kiro account, set that agent to `auto` or the nearest available tier from the same family."
 }

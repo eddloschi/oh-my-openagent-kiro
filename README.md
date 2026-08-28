@@ -1,25 +1,30 @@
 # Oh My OpenAgent for Kiro
 
-Oh My OpenAgent for Kiro ports the OMO workflow to Kiro-native primitives:
+Oh My OpenAgent for Kiro ports the OMO workflow to Kiro-native primitives. It tracks upstream
+[oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) **v4.19.4**.
 
 - 11 custom agents for planning, execution, review, research, and specialist consultation.
-- Kiro `subagent` support for agent-to-agent handoffs.
+- Kiro `subagent` support for agent-to-agent handoffs, with a binding GOAL / STOP WHEN / EVIDENCE
+  contract on every spawn.
 - Claude model tiers assigned by role.
-- Kiro Code Intelligence through the `code` tool.
+- Kiro Code Intelligence through the `code` tool, plus `sg` (ast-grep) for structural search.
 - MCP research tools: `context7`, `grep_app`, and `websearch`.
-- Skills for the main workflows: plan, start work, review plan, research, and ultrawork.
+- 20 skills: the core OMO workflows plus the upstream shared-skill library.
 
-This repository intentionally contains only the Kiro port. It does not include OpenCode plugins, tmux tooling, Team Mode, or Oh My OpenAgent runtime internals.
+This repository intentionally contains only the Kiro port. It does not include OpenCode plugins,
+tmux tooling, Team Mode, or Oh My OpenAgent runtime internals — see
+[`.kiro/steering/limitations.md`](.kiro/steering/limitations.md) for what that means in practice.
 
 ## Contents
 
 ```text
-powers/omo-kiro/      Power package for Kiro IDE/local Power flows
+powers/omo-kiro/      Power package for Kiro IDE/local Power flows (mirror of .kiro/)
 .kiro/agents/         CLI-ready custom agents
-.kiro/prompts/        Large agent prompts referenced by the agents
-.kiro/skills/         Slash-invokable OMO workflows
+.kiro/prompts/        Agent prompts referenced by the agents
+.kiro/skills/         Slash-invokable OMO workflows and specialist skills
 .kiro/steering/       Shared workflow and safety rules
 .kiro/settings/       Workspace MCP configuration
+scripts/              Mirror sync and drift check
 ```
 
 ## Installation
@@ -38,9 +43,8 @@ cp -R powers/omo-kiro "$TARGET_WORKSPACE/powers/"
 Quick global CLI install:
 
 ```bash
-mkdir -p "$HOME/.kiro"
-cp -R .kiro/agents .kiro/prompts .kiro/skills .kiro/steering .kiro/settings "$HOME/.kiro/"
 mkdir -p "$HOME/.kiro/powers"
+cp -R .kiro/agents .kiro/prompts .kiro/skills .kiro/steering .kiro/settings "$HOME/.kiro/"
 cp -R powers/omo-kiro "$HOME/.kiro/powers/"
 ```
 
@@ -56,13 +60,13 @@ kiro-cli mcp list
 Primary agents:
 
 - `sisyphus`: high-autonomy orchestration and completion.
-- `hephaestus`: deep execution and implementation.
+- `hephaestus`: deep execution and implementation (GPT-5.6, per upstream).
 - `prometheus`: planning-only agent that writes markdown plans.
-- `atlas`: executes saved plans step by step.
+- `atlas`: executes saved plans step by step, with PR delivery modes.
 
 Specialists:
 
-- `oracle`: senior technical advisor.
+- `oracle`: senior technical advisor, independent plan reviewer, review-work reviewer.
 - `librarian`: external docs, source, issues, and examples.
 - `explore`: local codebase discovery.
 - `multimodal-looker`: image and visual inspection.
@@ -72,11 +76,18 @@ Specialists:
 
 ## Models
 
-The agents are configured for the highest available Claude tiers reported in this Kiro account:
+Agents are mapped to Claude tiers by role:
 
-- Opus: `claude-opus-4.8`
-- Sonnet: `claude-sonnet-4.6`
-- Haiku: `claude-haiku-4.5`
+| Tier | Model | Agents |
+|---|---|---|
+| Opus | `claude-opus-5` | sisyphus, prometheus, oracle |
+| Sonnet | `claude-sonnet-5` | atlas, metis, momus, multimodal-looker, sisyphus-junior |
+| Haiku | `claude-haiku-4.5` | explore, librarian |
+| GPT | `gpt-5.6-sol` | hephaestus |
+
+`hephaestus` is the one non-Claude agent: upstream registers it only for GPT-5.x models and its
+prompt is that execution contract. Switch it to `claude-opus-5` in `.kiro/agents/hephaestus.json`
+and `powers/omo-kiro/model-map.json` if you would rather stay on a single provider.
 
 Check your account before use:
 
@@ -84,105 +95,76 @@ Check your account before use:
 kiro-cli chat --list-models
 ```
 
-If a model is unavailable, replace the `model` field in the affected agent JSON with another listed model or with `auto`.
+Kiro falls back to `chat.defaultModel` when a configured model id is unavailable, so a wrong id
+degrades silently — verify the ids, then adjust `powers/omo-kiro/model-map.json` and the agent JSON
+together if they differ.
 
 ## MCPs
 
-The port includes three remote MCP servers:
+Three remote MCP servers, embedded in each agent JSON and listed in `.kiro/settings/mcp.json`:
 
 - `context7`: official library/framework docs.
 - `grep_app`: public GitHub code search.
 - `websearch`: Exa-backed web search.
 
-They are embedded in each agent JSON so `kiro-cli chat --agent <name>` can load them directly. The same servers are also listed in `.kiro/settings/mcp.json` for workspace visibility.
-
-No API keys are committed. If your environment requires authentication, add headers locally using environment variables such as `${EXA_API_KEY}` or `${CONTEXT7_API_KEY}`.
+No API keys are committed. If your environment requires authentication, add headers locally using
+environment variables such as `${EXA_API_KEY}` or `${CONTEXT7_API_KEY}`.
 
 ## Use In Kiro CLI
-
-Clone or copy this repository, then run Kiro CLI from the repository root:
 
 ```bash
 kiro-cli agent list
 kiro-cli mcp list
-```
-
-Validate the agents:
-
-```bash
 for f in .kiro/agents/*.json; do kiro-cli agent validate --path "$f" || exit 1; done
-```
-
-Start a session with an agent:
-
-```bash
 kiro-cli chat --agent prometheus
-kiro-cli chat --agent sisyphus
-kiro-cli chat --agent librarian
-```
-
-For non-interactive checks:
-
-```bash
-kiro-cli chat --agent librarian --no-interactive --trust-tools=read,fs_read,@context7,@grep_app,@websearch \
-  "Use context7 to summarize React useEffect in two sentences."
 ```
 
 ## Use In Kiro IDE
 
-Use the Power package at:
-
-```text
-powers/omo-kiro/
-```
-
-Install it through Kiro IDE's local Power flow. If your Kiro IDE build does not load local Powers directly, copy the Power contents into the workspace-level Kiro directories:
-
-```text
-powers/omo-kiro/agents/   -> .kiro/agents/
-powers/omo-kiro/prompts/  -> .kiro/prompts/
-powers/omo-kiro/skills/   -> .kiro/skills/
-powers/omo-kiro/steering/ -> .kiro/steering/
-powers/omo-kiro/settings/ -> .kiro/settings/
-```
-
-Then reload the workspace and check that the agents appear in the agent picker.
+Install the Power package at `powers/omo-kiro/` through Kiro IDE's local Power flow. If your build
+does not load local Powers directly, copy its `agents/`, `prompts/`, `skills/`, `steering/`, and
+`settings/` into the matching `.kiro/` directories and reload the workspace.
 
 ## Workflows
 
-Plan:
+Core:
 
 ```text
-/omo-plan <task>
+/omo-plan <task>                          Plan first: explore, route intent, approve, then write one plan
+/omo-review-plan <plan.md>                Dual review (momus + independent oracle)
+/omo-start-work <plan.md> [--worktree <p>] [--make-pr] [--ship]
+/omo-ultrawork <goal>                     Autonomous end-to-end implementation
+/omo-research <question>                  Evidence-first research with a claim ledger
+/omo-review-work                          Five-lane review of completed work
+/omo-goal <objective>|show|pause|resume|clear
+/omo-handoff                              Context block for continuing in a fresh session
 ```
 
-Review a plan:
+Specialist skills: `/omo-ast-grep`, `/omo-coding-agent-sessions`, `/omo-data-scientist`,
+`/omo-debugging`, `/omo-frontend`, `/omo-git-master`, `/omo-init-deep`, `/omo-lsp-setup`,
+`/omo-programming`, `/omo-refactor`, `/omo-remove-ai-slops`, `/omo-ultimate-browsing`,
+`/omo-visual-qa`.
+
+## Working state
+
+Runtime state lives under `.kiro/omo/`, which this repository ignores:
 
 ```text
-/omo-review-plan .kiro/omo/plans/<plan>.md
-```
-
-Execute a saved plan:
-
-```text
-/omo-start-work .kiro/omo/plans/<plan>.md
-```
-
-Research:
-
-```text
-/omo-research <question>
-```
-
-Autonomous implementation:
-
-```text
-/omo-ultrawork <goal>
+.kiro/omo/plans/          Approved work plans
+.kiro/omo/drafts/         Planning drafts (the resume point)
+.kiro/omo/goal.md         Active objective and its stop condition
+.kiro/omo/boulder.json    Active plan and session status
+.kiro/omo/notepads/       Per-plan learnings, decisions, issues, problems
+.kiro/omo/start-work/     Execution evidence ledger
+.kiro/omo/learnings/      Durable research notes
 ```
 
 ## Notes
 
 - Use `/code init` in Kiro when you want LSP-backed Code Intelligence.
-- Use `subagent` for specialist consultation. The older experimental delegate feature is deprecated by Kiro.
+- Kiro subagents are **sequential** — there is no background dispatch. Workflows inherited from
+  upstream's parallel design run lane by lane and say so.
+- Use `subagent` for specialist consultation. Kiro's experimental `delegate` tool is deprecated.
 - Do not send secrets or large private code snippets to remote MCPs.
-- Plans and working memory should live under `.kiro/omo/`, which is ignored by this repository.
+- Some skills need external tooling — see [INSTALL.md](INSTALL.md#toolchain-prerequisites).
+- Third-party material is credited in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

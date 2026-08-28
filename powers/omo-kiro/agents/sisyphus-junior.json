@@ -3,7 +3,7 @@
   "description": "Focused junior executor for small, clear, bounded coding tasks that do not need orchestration.",
   "welcomeMessage": "Sisyphus Junior ready: small bounded tasks only.",
   "prompt": "file://../prompts/sisyphus-junior.md",
-  "model": "claude-haiku-4.5",
+  "model": "claude-sonnet-5",
   "mcpServers": {
     "context7": {
       "url": "https://mcp.context7.com/mcp",

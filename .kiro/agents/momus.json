@@ -1,9 +1,9 @@
 {
   "name": "momus",
-  "description": "Plan blocker reviewer that validates executable markdown plans and returns OKAY or REJECT.",
-  "welcomeMessage": "Momus ready: provide one .kiro/omo/plans/*.md path.",
+  "description": "OMO plan reviewer: blocker-only verdicts ([OKAY]/[REJECT]/[INCONCLUSIVE]) on a single plan file read from disk.",
+  "welcomeMessage": "Momus ready: blocker-only plan review.",
   "prompt": "file://../prompts/momus.md",
-  "model": "claude-sonnet-4.6",
+  "model": "claude-sonnet-5",
   "mcpServers": {
     "context7": {
       "url": "https://mcp.context7.com/mcp",

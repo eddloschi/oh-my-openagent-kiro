@@ -3,7 +3,7 @@
   "description": "Read-only media interpretation agent for images, screenshots, diagrams, PDFs, and visual documents.",
   "welcomeMessage": "Multimodal Looker ready: attach media and state what to extract.",
   "prompt": "file://../prompts/multimodal-looker.md",
-  "model": "claude-sonnet-4.6",
+  "model": "claude-sonnet-5",
   "mcpServers": {
     "context7": {
       "url": "https://mcp.context7.com/mcp",

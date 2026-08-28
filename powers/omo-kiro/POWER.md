@@ -1,7 +1,7 @@
 ---
 name: "omo-kiro"
 displayName: "OMO for Kiro"
-description: "A Kiro-native port of the Oh My OpenAgent workflow. Provides OMO-style planning, execution, research, review, and specialist agents without requiring Kiro CLI runtime customization."
+description: "A Kiro-native port of the Oh My OpenAgent workflow (tracking upstream v4.19.4). Provides OMO-style planning, execution, research, review, and 20 workflow and specialist skills without requiring Kiro CLI runtime customization."
 keywords: [kiro, agents, planning, execution, research, omo]
 author: "local"
 ---
@@ -17,8 +17,10 @@ OMO for Kiro packages the Oh My OpenAgent workflow as Kiro-native primitives:
 - Shared workflow rules in `steering/`.
 - User-facing workflow skills in `skills/`.
 - A deterministic `model-map.json` for choosing account-available Kiro models.
-- Kiro Code Intelligence through the `code` tool for coding agents.
+- Kiro Code Intelligence through the `code` tool for coding agents, plus `sg` (ast-grep) for
+  structural search.
 - Remote MCP research tools for `context7`, `grep_app`, and `websearch`.
+- A binding GOAL / STOP WHEN / EVIDENCE contract on every subagent handoff.
 
 This Power preserves OMO's practical workflow shape: understand the request, plan with evidence, review blockers, execute deliberately, verify, and record reusable learnings.
 
@@ -30,6 +32,10 @@ This Power preserves OMO's practical workflow shape: understand the request, pla
 - A Kiro account with at least one coding-capable model configured.
 - Optional network/search tools for `librarian`; otherwise it works from locally available docs and repositories.
 - Optional LSP setup via `/code init` for enhanced references, definitions, hover docs, diagnostics, and rename support. Built-in Tree-sitter code intelligence works without LSP.
+- Optional external tooling for specialist skills: `node` (plan scaffolding, visual QA), `python3`
+  (ast-grep helper, session finder, browsing engine), `sg`, `uv`, `gh`, and a browser CLI
+  (`agent-browser` or Playwright) for web visual QA. Each skill degrades with an explicit message
+  when its tool is absent.
 
 ### Installation
 
@@ -48,8 +54,11 @@ Leave `prompts/` beside `agents/`, or update each agent `prompt` path after copy
 
 1. Review `model-map.json`.
 2. Run `kiro-cli chat --list-models --format json-pretty`.
-3. This package currently maps agents to the highest available Claude tiers: Opus 4.8, Sonnet 4.6, and Haiku 4.5.
-4. If a mapped model is unavailable in another account, replace it with the nearest available tier or `auto`.
+3. This package maps agents by role: Opus 5 (sisyphus, prometheus, oracle), Sonnet 5 (atlas, metis,
+   momus, multimodal-looker, sisyphus-junior), Haiku 4.5 (explore, librarian), and GPT-5.6 Sol
+   (hephaestus — upstream registers that agent only for GPT-5.x models).
+4. Kiro falls back to `chat.defaultModel` when a model id is unavailable — silently. Confirm the ids
+   are in your account; if not, replace them in both the agent JSON and `model-map.json`.
 5. Add or replace `"model": "<kiro-model-id>"` only after confirming that model appears in your account.
 6. Validate agents:
 
@@ -119,9 +128,28 @@ Expected flow:
 
 ### Autonomous Deep Work
 
-Use `/omo-ultrawork <goal>` for end-to-end implementation when a full plan would slow down a bounded task.
+Use `/omo-ultrawork <goal>` for end-to-end implementation when a full plan would slow down a bounded
+task. It declares a binding stop condition, defines scenario QA, implements test-first, and commits
+per verified increment.
 
-Use `sisyphus` for Claude-like orchestration and `hephaestus` for GPT-family deep execution.
+Use `sisyphus` for orchestration-heavy work and `hephaestus` for deep single-thread execution.
+
+### Review Completed Work
+
+Use `/omo-review-work` before a PR handoff. Five lanes run sequentially — goal and constraint
+verification, code quality, security, context mining, and hands-on QA — and all must pass.
+
+### Session Continuity
+
+Use `/omo-goal <objective>` to record a persistent objective and its stop condition in
+`.kiro/omo/goal.md`; agent hooks surface it at the start of each turn. Use `/omo-handoff` to produce
+a context block for continuing in a fresh session.
+
+### Specialist Skills
+
+`/omo-ast-grep`, `/omo-coding-agent-sessions`, `/omo-data-scientist`, `/omo-debugging`,
+`/omo-frontend`, `/omo-git-master`, `/omo-init-deep`, `/omo-lsp-setup`, `/omo-programming`,
+`/omo-refactor`, `/omo-remove-ai-slops`, `/omo-ultimate-browsing`, `/omo-visual-qa`.
 
 ### Research
 
@@ -136,14 +164,20 @@ Expected flow:
 
 ## Known Limitations
 
-This v1 package does not implement OpenCode-only runtime features:
+This package does not implement OpenCode-only runtime features. See
+`steering/limitations.md` for the full table and the intentional divergences from upstream.
 
-- No Team Mode.
-- No tmux UI.
-- No OpenCode background task manager.
-- No runtime model fallback engine.
-- No OpenCode plugin APIs.
-- No OpenCode custom delegated task tool semantics.
+- No background task manager: **Kiro subagents are sequential and blocking**. Workflows inherited
+  from upstream's parallel design (review-work, debugging's Oracle Triple, visual QA's dual pass)
+  run lane by lane and take correspondingly longer.
+- No goal tool or idle continuation: `/omo-goal` writes `.kiro/omo/goal.md` and agent hooks surface
+  it each turn, but nothing resumes an idle session.
+- No Team Mode, no tmux UI, no runtime model fallback engine, no OpenCode plugin APIs, no
+  OpenCode custom delegated task tool semantics.
+- No browser-control tool: `/omo-visual-qa` probes for a local `agent-browser` or Playwright CLI.
+- `hephaestus` runs on `gpt-5.6-sol`, matching upstream; it is the one non-Claude agent.
+- `/omo-frontend` ships without the upstream brand design-system references (a git submodule
+  upstream); the skill documents how to add them.
 
 Use Kiro's official `subagent` tool as the primary specialist mechanism. The old experimental `delegate` tool is deprecated by Kiro and should not be used for new OMO-Kiro workflows.
 
@@ -164,8 +198,10 @@ This fallback is not OpenCode-style background delegation. It is a separate Kiro
 
 ## Best Practices
 
-- Keep plans under `.kiro/omo/plans/`.
-- Keep drafts and research notes under `.kiro/omo/drafts/`.
+- Keep plans under `.kiro/omo/plans/` and drafts under `.kiro/omo/drafts/` — both are created by
+  `skills/omo-plan/scripts/scaffold-plan.mjs`, never by hand.
+- Give every subagent handoff a GOAL, a STOP WHEN condition, and an EVIDENCE requirement.
+- Treat subagent output as a claim until you verify it against the evidence you asked for.
 - Ask `momus` to review plans before execution when work spans multiple files or requires QA.
 - Use `explore` before changing unfamiliar areas.
 - Use `librarian` for external library behavior and current docs.
