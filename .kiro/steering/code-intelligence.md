@@ -1,13 +1,26 @@
 # Code Intelligence
 
-Use Kiro CLI Code Intelligence for codebase understanding.
+Use Kiro CLI Code Intelligence for codebase understanding, in this order.
 
-- Prefer the `code` tool for codebase overview, symbol search, document symbols, exact symbol lookup, AST pattern search, diagnostics, definitions, and references.
-- Tree-sitter code intelligence works out of the box for supported languages and does not require LSP setup.
-- LSP-backed features such as references, definition lookup, hover docs, rename, diagnostics, and completions require workspace initialization with `/code init`.
-- If LSP features are unavailable, fall back to built-in Tree-sitter operations and shell searches such as `rg`.
-- For read-only agents, use `code` for search, overview, symbols, diagnostics, and dry-run analysis only. Do not run code rewrite or rename operations.
-- For rewrite workflows, search first, run dry-run preview, review matches, then apply only from executor agents and only when in scope.
+1. **`code` tool first** — overview, symbol search, document symbols, exact symbol lookup, AST
+   pattern search, diagnostics, definitions, and references. This is the port's replacement for
+   upstream's CodeGraph and `lsp_*` tools: use it for "how/where/what/flow" questions before wider
+   reads.
+2. **`rg` / shell** when the `code` tool is unavailable, uninitialized, or the query is about string
+   contents, comments, or filenames rather than syntax shape.
+3. **`sg` (ast-grep) via the `/omo-ast-grep` skill** when the target is a syntax *shape* — every call
+   or class or import matching a pattern, or a deterministic codemod — and Tree-sitter search cannot
+   express it precisely.
+
+Notes:
+
+- Tree-sitter code intelligence works out of the box for supported languages; no setup needed.
+- LSP-backed features (references, definitions, hover, rename, diagnostics, completions) require
+  `/code init`. If a language has no server, see the `/omo-lsp-setup` skill.
+- Read-only agents use `code` for search, overview, symbols, diagnostics, and dry-run analysis only.
+  Never run code rewrite or rename operations from a read-only agent.
+- For rewrite workflows: search first, dry-run preview, review matches, then apply — from an executor
+  agent, and only when in scope.
 
 Useful slash commands:
 
