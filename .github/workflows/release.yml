@@ -1,0 +1,79 @@
+name: release
+
+# Releases are cut by changing VERSION, not by merging to main. An ordinary fix
+# merge touches no version marker and produces no release; bumping VERSION in a
+# PR means merging that PR publishes the version.
+on:
+  push:
+    branches: [main]
+    paths: ['VERSION']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Read VERSION
+        id: v
+        run: |
+          version=$(tr -d ' \t\r\n' < VERSION)
+          case "$version" in
+            [0-9]*.[0-9]*.[0-9]*-kiro.[0-9]*) ;;
+            *) echo "VERSION must look like 4.19.4-kiro.1, got: '$version'" >&2; exit 1 ;;
+          esac
+          {
+            echo "tag=v$version"
+            echo "upstream=${version%-kiro.*}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Skip if already released
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.v.outputs.tag }}
+        run: |
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null \
+             || gh release view "$TAG" >/dev/null 2>&1; then
+            echo "$TAG already released; nothing to do."
+            echo "proceed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "proceed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Write release notes
+        if: steps.gate.outputs.proceed == 'true'
+        env:
+          TAG: ${{ steps.v.outputs.tag }}
+          UPSTREAM: ${{ steps.v.outputs.upstream }}
+          REPO: ${{ github.repository }}
+        run: |
+          {
+            printf 'Kiro port release `%s`, tracking upstream ' "$TAG"
+            printf '[oh-my-openagent v%s](https://github.com/code-yeongyu/oh-my-openagent/releases/tag/v%s).\n\n' "$UPSTREAM" "$UPSTREAM"
+            printf 'The `-kiro.N` suffix is this port'"'"'s own revision: it increments for port-only\n'
+            printf 'changes and resets when the tracked upstream version moves.\n\n'
+            printf 'Install: see [INSTALL.md](https://github.com/%s/blob/%s/INSTALL.md).\n' "$REPO" "$TAG"
+          } > release-notes.md
+          cat release-notes.md
+
+      - name: Tag and release
+        if: steps.gate.outputs.proceed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.v.outputs.tag }}
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "$TAG"
+          git push origin "$TAG"
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes-file release-notes.md \
+            --generate-notes

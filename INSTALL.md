@@ -189,6 +189,29 @@ Example:
 }
 ```
 
+## Releasing
+
+The port carries its own version in `VERSION`, formatted `<upstream>-kiro.<n>`:
+
+```text
+4.19.4-kiro.1    first release tracking upstream v4.19.4
+4.19.4-kiro.2    port-only fix, same upstream
+4.20.0-kiro.1    next upstream sync
+```
+
+The `-kiro.<n>` revision exists because the port and upstream are separate lines: a fix to a
+prompt or script here does not correspond to an upstream release, and a bare `v4.19.4` tag would
+leave nowhere to put it.
+
+To cut a release, bump `VERSION` in a pull request. Merging it fires
+`.github/workflows/release.yml`, which tags the commit and publishes a GitHub release with
+generated notes. Merges that do not touch `VERSION` publish nothing, and the workflow is a no-op
+if the tag already exists — so re-running it is safe.
+
+`.github/workflows/verify.yml` runs on every pull request: the mirror-sync, skill-frontmatter, and
+forbidden-token checks, plus agent JSON validity, the agent-to-model-map match, prompt reference
+resolution, a plan-scaffold smoke test, and compilation of the vendored Python.
+
 ## Updating An Existing Install
 
 Before replacing files, inspect user changes:
