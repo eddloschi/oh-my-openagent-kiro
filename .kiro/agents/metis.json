@@ -3,7 +3,7 @@
   "description": "Pre-planning consultant that classifies intent, surfaces ambiguity, prevents scope creep, and gives directives to Prometheus.",
   "welcomeMessage": "Metis ready: provide a request to analyze before planning.",
   "prompt": "file://../prompts/metis.md",
-  "model": "claude-sonnet-4.6",
+  "model": "claude-sonnet-5",
   "mcpServers": {
     "context7": {
       "url": "https://mcp.context7.com/mcp",

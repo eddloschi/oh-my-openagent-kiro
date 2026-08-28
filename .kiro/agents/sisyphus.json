@@ -3,7 +3,7 @@
   "description": "OMO ultraworker for autonomous scoped implementation, orchestration, verification, and specialist handoffs.",
   "welcomeMessage": "Sisyphus ready: autonomous scoped implementation with verification.",
   "prompt": "file://../prompts/sisyphus.md",
-  "model": "claude-opus-4.8",
+  "model": "claude-opus-5",
   "mcpServers": {
     "context7": {
       "url": "https://mcp.context7.com/mcp",
@@ -61,5 +61,21 @@
   "resources": [
     "file://../steering/**/*.md",
     "skill://../skills/**/SKILL.md"
-  ]
+  ],
+  "hooks": {
+    "agentSpawn": [
+      {
+        "command": "[ -f .kiro/omo/boulder.json ] && cat .kiro/omo/boulder.json; true",
+        "timeout_ms": 2000,
+        "max_output_size": 4096
+      }
+    ],
+    "userPromptSubmit": [
+      {
+        "command": "[ -f .kiro/omo/goal.md ] && cat .kiro/omo/goal.md; true",
+        "timeout_ms": 2000,
+        "max_output_size": 4096
+      }
+    ]
+  }
 }

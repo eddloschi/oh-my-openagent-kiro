@@ -1,9 +1,9 @@
 {
   "name": "atlas",
-  "description": "OMO plan executor that implements saved markdown plans, updates checklist state, and runs verification.",
-  "welcomeMessage": "Atlas ready: provide a .kiro/omo/plans/*.md path.",
+  "description": "OMO plan executor and start-work worker: goal + task registration, notepads, boulder state, per-task DoneClaim verification, and PR delivery modes.",
+  "welcomeMessage": "Atlas ready: executing saved plans from .kiro/omo/plans/ with verification evidence.",
   "prompt": "file://../prompts/atlas.md",
-  "model": "claude-sonnet-4.6",
+  "model": "claude-sonnet-5",
   "mcpServers": {
     "context7": {
       "url": "https://mcp.context7.com/mcp",
@@ -61,5 +61,21 @@
   "resources": [
     "file://../steering/**/*.md",
     "skill://../skills/**/SKILL.md"
-  ]
+  ],
+  "hooks": {
+    "agentSpawn": [
+      {
+        "command": "[ -f .kiro/omo/boulder.json ] && cat .kiro/omo/boulder.json; true",
+        "timeout_ms": 2000,
+        "max_output_size": 4096
+      }
+    ],
+    "userPromptSubmit": [
+      {
+        "command": "[ -f .kiro/omo/goal.md ] && cat .kiro/omo/goal.md; true",
+        "timeout_ms": 2000,
+        "max_output_size": 4096
+      }
+    ]
+  }
 }

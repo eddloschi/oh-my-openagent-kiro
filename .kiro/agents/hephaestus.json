@@ -1,9 +1,9 @@
 {
   "name": "hephaestus",
-  "description": "OMO deep execution agent for complex implementation requiring thorough exploration and end-to-end completion.",
+  "description": "OMO deep execution agent (GPT-5.6, matching upstream) for complex implementation requiring thorough exploration and end-to-end completion.",
   "welcomeMessage": "Hephaestus ready: deep implementation with concrete verification.",
   "prompt": "file://../prompts/hephaestus.md",
-  "model": "claude-opus-4.8",
+  "model": "gpt-5.6-sol",
   "mcpServers": {
     "context7": {
       "url": "https://mcp.context7.com/mcp",
@@ -61,5 +61,21 @@
   "resources": [
     "file://../steering/**/*.md",
     "skill://../skills/**/SKILL.md"
-  ]
+  ],
+  "hooks": {
+    "agentSpawn": [
+      {
+        "command": "[ -f .kiro/omo/boulder.json ] && cat .kiro/omo/boulder.json; true",
+        "timeout_ms": 2000,
+        "max_output_size": 4096
+      }
+    ],
+    "userPromptSubmit": [
+      {
+        "command": "[ -f .kiro/omo/goal.md ] && cat .kiro/omo/goal.md; true",
+        "timeout_ms": 2000,
+        "max_output_size": 4096
+      }
+    ]
+  }
 }
